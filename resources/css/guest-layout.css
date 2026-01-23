@@ -1,0 +1,16 @@
+@import "./globals.css";
+
+.guest_layout {
+    .container {
+        @apply py-4 px-4 md:px-16 mx-auto;
+    }
+}
+
+@import "./components/index.css";
+
+@import "./partials/navbar.css";
+@import "./partials/footer.css";
+
+@import "./pages/Authentication.css";
+@import "./pages/general/HomePage.css";
+@import "./pages/general/ContactPage.css";

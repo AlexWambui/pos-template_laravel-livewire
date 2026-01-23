@@ -1,0 +1,78 @@
+.guest_navbar {
+    @apply relative sticky top-0 left-0 right-0 z-50 bg-gray-900 text-white font-semibold py-[2px];
+
+    .container {
+        @apply flex flex-wrap items-center justify-between py-2 px-4 md:px-16 mx-auto;
+        @apply md:grid md:grid-cols-3 md:items-center;
+
+        .branding {
+            a {
+                @apply flex items-center gap-4 text-lg font-bold text-white;
+
+                .image {
+                    @apply h-[35px] w-[35px];
+                }
+            }
+        }
+
+        .burger_menu {
+            @apply flex flex-col justify-center items-center space-y-1.5 cursor-pointer md:hidden;
+
+            span {
+                @apply w-6 h-0.5 bg-gray-900 block transition duration-300 ease-in-out;
+            }
+        }
+
+        .nav_links {
+            @apply w-full hidden md:flex md:col-span-2 md:items-center md:justify-between mt-6 md:mt-0;
+
+            .main_links {
+                @apply flex flex-col md:flex-row md:space-x-8 space-y-2 md:space-y-0 md:justify-center md:flex-1;
+
+                a {
+                    @apply block md:inline-block text-white py-2 md:py-0 font-semibold hover:text-blue-800 transition-colors;
+                }
+
+                a.active {
+                    @apply text-blue-300 font-bold border-b-2 border-blue-300;
+                }
+            }
+
+            .other_links {
+                @apply mt-4 md:mt-0 md:flex md:justify-end md:flex-1;
+
+                a {
+                    @apply md:bg-white md:text-gray-900 hover:bg-blue-300 hover:text-white md:rounded-lg md:py-2 md:px-6 uppercase;
+                }
+            }
+
+            .nav_dropdown {
+                @apply relative;
+
+                button {
+                    @apply flex items-center gap-1;
+                }
+
+                .dropdown_icon {
+                    @apply h-4 w-4 transition-transform;
+                }
+
+                .dropdown_icon.open {
+                    @apply rotate-180;
+                }
+
+                .dropdown_menu {
+                    @apply absolute left-0 mt-2 w-56 md:w-64 bg-white shadow-xl rounded-lg z-50 py-4 px-4 flex flex-col space-y-4 lg:space-y-6 border border-gray-200;
+
+                    a {
+                        @apply block px-4 py-2 text-gray-900 hover:bg-gray-50 hover:text-blue-800 transition-colors;
+                    }
+                }
+            }
+        }
+
+        .nav_links.open {
+            @apply block;
+        }
+    }
+}

@@ -1,0 +1,67 @@
+.ContactMessages {
+    .messages_list {
+        .table {
+            .numbering {
+                @apply flex items-center gap-1;
+
+                svg {
+                    @apply w-3 h-3;
+                }
+            }
+        }
+    }
+
+    .EditMessage {
+        @apply bg-slate-100 rounded-lg shadow-sm;
+
+        .header {
+            @apply grid grid-cols-12 items-start text-gray-900 border-b-1 border-gray-300 p-4;
+
+            .info {
+                @apply col-span-8 flex items-start gap-2;
+
+                .contact_info {
+                    h2 {
+                        @apply font-bold text-lg;
+                    }
+
+                    p {
+                        @apply grid space-y-0.5 text-sm;
+                    }
+                }
+            }
+
+            .actions {
+                @apply col-span-4 justify-self-end;
+
+                button {
+                    @apply border-none p-2 rounded-lg hover:bg-gray-100;
+                }
+            }
+        }
+
+        .message_details {
+            @apply p-4 mt-2 flex flex-col gap-6;
+
+            .user_message {
+                @apply w-[65%] bg-blue-100 rounded-lg p-4 grid;
+
+                .message {
+                    @apply justify-self-start;
+                }
+
+                .timestamp {
+                    @apply justify-self-end;
+
+                    span {
+                        @apply text-xs text-gray-700;
+                    }
+                }
+            }
+        }
+    }
+
+    .custom_form {
+        @apply mt-8 p-0;
+    }
+}

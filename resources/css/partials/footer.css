@@ -1,0 +1,93 @@
+footer {
+    @apply bg-gray-900 text-white pt-12 pb-6;
+
+    .container {
+        @apply px-4 md:px-16 mx-auto;
+
+        .content {
+            @apply grid grid-cols-1 lg:grid-cols-4 gap-8 items-start;
+
+            h3 {
+                @apply text-xl font-bold mb-4;
+            }
+
+            a,
+            p {
+                @apply text-white;
+            }
+
+            svg {
+                @apply fill-current;
+            }
+
+            p {
+                @apply mb-4;
+            }
+
+            .logo {
+                @apply w-[150px] h-[150px];
+
+                img {
+                    @apply w-full h-full object-contain;
+                }
+            }
+
+            .branding {
+                .info {
+                    p {
+                        @apply flex items-center gap-2;
+                    }
+
+                    .location {
+                        @apply items-start;
+                    }
+                }
+            }
+
+            .quick_links,
+            .services,
+            .connect {
+                @apply lg:justify-self-center;
+            }
+
+            .links {
+                @apply grid gap-2;
+
+                a {
+                    @apply hover:text-gray-200 transition-colors duration-300;
+                }
+            }
+
+            .connect {
+                .socials {
+                    @apply flex items-end space-x-4 mb-4;
+                }
+
+                .contacts {
+                    @apply mt-6;
+
+                    p {
+                        @apply grid gap-1 font-semibold tracking-wide;
+                    }
+                }
+            }
+        }
+
+        .copyrights {
+            @apply border-t border-gray-800 pt-2 flex flex-col md:flex-row justify-between items-center;
+
+            .text,
+            .documents a {
+                @apply text-gray-400 text-sm;
+            }
+
+            .documents {
+                @apply flex space-x-4 mt-4;
+
+                a {
+                    @apply hover:text-white transition-colors duration-300;
+                }
+            }
+        }
+    }
+}

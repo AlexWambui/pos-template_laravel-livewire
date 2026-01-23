@@ -1,0 +1,51 @@
+.custom_form button,
+button,
+a.btn {
+    @apply cursor-pointer;
+}
+
+.custom_form button,
+button.btn,
+a.btn {
+    @apply bg-gray-900 text-white font-semibold tracking-wide rounded-lg py-[12px] px-[24px];
+}
+
+.buttons_group {
+    @apply flex items-center gap-12 mt-4;
+}
+
+.actions {
+    @apply flex items-end justify-between mt-4;
+
+    .crud {
+         @apply flex items-center space-x-2;
+    }
+ }
+
+.crud {
+    @apply flex items-center justify-between gap-8 mt-4;
+
+    .buttons_group {
+        @apply mt-0 gap-6;
+
+        button {
+            @apply py-1 px-1 text-sm;
+        }
+    }
+}
+
+button.btn_transparent,
+a.btn_transparent {
+    @apply bg-transparent text-gray-900 border border-gray-900;
+}
+
+.btn_danger,
+button.btn_danger,
+a.btn_danger {
+    @apply bg-red-600;
+}
+
+button.btn_themed,
+a.btn_themed {
+    @apply bg-[var(--themed-btn)] text-white hover:bg-[var(--themed-btn-hover)] focus:ring-2 focus:ring-[var(--themed-btn-focus)] focus:ring-offset-2;
+}
