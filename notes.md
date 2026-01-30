@@ -1,3 +1,249 @@
+# WORKFLOW
+1. Login / Authentication
+
+First page every cashier sees
+
+Purpose:
+
+Identify the cashier
+
+Track shifts and transactions per user
+
+Enforce role-based access
+
+Key elements:
+
+Email / PIN / password login (PIN optional for speed)
+
+Remember me for kiosk mode
+
+Show role (USER, ADMIN, OWNER)
+
+Validate active status (status = ACTIVE)
+
+Flow logic:
+
+User enters credentials
+
+Check users.status == ACTIVE
+
+Redirect to Open Shift page (if no open shift exists)
+
+Otherwise, redirect to POS Dashboard
+
+2. Shift Management (Open / Close Shift)
+
+Every cashier must open a shift before transacting
+
+Page / modal:
+
+Open shift form
+
+Opening Cash (input)
+
+Display current open shifts (if any)
+
+Option to close shift (once done)
+
+Requires counting cash / reconciling with cash_movements and sale_payments
+
+Flow rules:
+
+Cannot process sales without an open shift
+
+Only one open shift per user
+
+Record shift.opened_at and shift.opening_cash
+
+Record user_id in shift
+
+Tip: Lock POS buttons until shift is open
+
+3. POS Dashboard / Sale Page
+
+Main page where sales happen
+
+Components:
+
+Product search / barcode scan
+
+Category filter (drill-down using product_categories)
+
+Product list / quick add buttons
+
+Current sale cart (session or Livewire-managed)
+
+Payment button / tender options
+
+Discounts / promotions (if applicable)
+
+Flow:
+
+Cashier adds items to cart
+
+System calculates subtotal, tax (optional), discounts
+
+Show current total and running inventory check
+
+Prevent adding products if stock insufficient (query inventory_movements ledger)
+
+Allow editing quantity, removing items
+
+Backend logic:
+
+Items are added in session or temporary sale table
+
+Stock is not decremented until sale is completed
+
+Show real-time stock for audit & shrink prevention
+
+4. Checkout / Payment
+
+This is the moment of truth
+
+Options:
+
+Full payment
+
+Cash, card, mobile money
+
+Split payments
+
+Partial payment (rare for POS, optional)
+
+Flow:
+
+Cashier chooses payment method(s)
+
+Input amounts
+
+Verify total matches cart total
+
+Save sale + sale_items + sale_payments + inventory_movements + cash_movements in one transaction
+
+Print / show receipt
+
+Update drawer totals
+
+Rules / safeguards:
+
+Cannot process checkout if no open shift
+
+Cannot process if cash drawer has discrepancy (optional alert)
+
+Inventory ledger updated atomically with sale
+
+5. Receipt / Sale Confirmation
+
+Page / modal after checkout
+
+Information:
+
+Sale number
+
+Items purchased
+
+Quantity and line totals
+
+Total paid
+
+Payment method(s)
+
+Cashier and shift info
+
+Timestamp (completed_at)
+
+Optional: QR code or copy for mobile payment confirmation
+
+Flow:
+
+Option to print receipt
+
+Option to start new sale immediately
+
+Return to POS Dashboard
+
+6. Shift Close / Reconciliation
+
+End of shift workflow
+
+Page / modal:
+
+List all sales for the shift
+
+Calculate:
+
+Opening cash + cash sales + top-ups − payouts
+
+Compare to closing cash physically counted
+
+Flag discrepancy
+
+Optionally require manager approval for variance
+
+Flow logic:
+
+Cashier counts cash
+
+Enter counted amount → shift.closing_cash
+
+System calculates variance
+
+Record all final cash_movements
+
+Lock shift → no more sales can be assigned to it
+
+Redirect to login page for next cashier
+
+7. Optional Auxiliary Screens
+
+Refund / Void Sale
+
+Must be tied to open shift and require a reason
+
+Adjust inventory_movements + cash_movements accordingly
+
+Reports / Dashboard
+
+Shift totals
+
+Sales by cashier / product / category
+
+Inventory shrink / restock alerts
+
+8. Recommended Flow Diagram (linear)
+Login
+   │
+   ▼
+[Open Shift?] ──No──> Open Shift Form
+   │Yes
+   ▼
+POS Dashboard / Add Products
+   │
+   ▼
+Checkout / Payment
+   │
+   ▼
+Receipt / New Sale
+   │
+   ▼
+[End of Shift?] ──Yes──> Shift Close / Reconciliation
+   │No
+   ▼
+POS Dashboard (continue selling)
+
+9. Notes for high-volume / multi-terminal
+
+Session management: Each cashier’s cart must be tied to user + shift
+
+Atomic operations: Sales, inventory, payments → single DB transaction
+
+Concurrency: Inventory ledger ensures no two cashiers oversell same product
+
+Speed: UI must minimize clicks, keyboard-centric or barcode-focused
+
+Audit trail: Everything linked to user_id and shift_id
+
 # TODOS
 - Fix auth flash messages.
 - Add a button for super admins to verify users.
@@ -53,7 +299,7 @@ contact_messages {
 
 
 # ENUMS
-```
+```php
 USER_ROLES: [
     SUPER_ADMIN = 0;
     ADMIN = 1;
@@ -66,4 +312,169 @@ USER_STATUSES: [
     ACTIVE = 1;
     BANNED = 2;
 ]
+
+INVENTORY_MOVEMENT_TYPE: [
+    SALE = 'sale';
+    RESTOCK = 'restock';
+    ADJUSTMENT = 'adjustment';
+]
+
+SALE_STATUS: [
+    PENDING = 0;
+    COMPLETED = 1;
+]
+
+protected $casts = [
+    'role' => UserRole::class,
+    'status' => UserStatus::class,
+];
+```
+
+# Migrations
+```php
+// users
+Schema::create('users', function (Blueprint $table) {
+    $table->id();
+    $table->uuid('uuid')->unique();
+    $table->string('name');
+    $table->string('email')->unique();
+    $table->string('phone_number')->nullable();
+    $table->string('secondary_phone_number')->nullable();
+    $table->unsignedTinyInteger('role')->default(3);
+    $table->unsignedTinyInteger('status')->default(1);
+    $table->string('image')->nullable();
+    $table->timestamp('email_verified_at')->nullable();
+    $table->string('password');
+    $table->rememberToken();
+    $table->timestamps();
+});
+
+Schema::create('shifts', function (Blueprint $table) {
+    $table->id();
+    $table->timestamp("opened_at");
+    $table->timestamp("closed_at")->nullable();
+    $table->decimal("opening_cash", 12, 2)->nullable();
+    $table->decimal("closing_cash", 12, 2)->nullable();
+
+    $table->foreignId("user_id")->constrained()->cascadeOnDelete();
+
+    $table->timestamps();
+
+    $table->index(['user_id', 'opened_at']);
+});
+
+Schema::create('product_categories', function (Blueprint $table) {
+    $table->id();
+
+    $table->string('name');
+    $table->string('slug')->unique();
+
+    // For nested categories (e.g. Drinks → Soft Drinks)
+    $table->foreignId('parent_id')->nullable()->constrained('product_categories')->nullOnDelete();
+
+    $table->boolean('is_active')->default(true);
+    $table->integer('sort_order')->default(0);
+
+    $table->timestamps();
+});
+
+Schema::create('products', function (Blueprint $table) {
+    $table->id();
+
+    $table->string('sku')->unique();
+    $table->string('name');
+    $table->decimal('base_price', 12, 2);
+
+    $table->boolean('is_active')->default(true);
+
+    $table->timestamps();
+});
+
+Schema::create('category_product', function (Blueprint $table) {
+    $table->id();
+
+    $table->foreignId('category_id')->constrained()->cascadeOnDelete();
+
+    $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+
+    $table->unique(['category_id', 'product_id']);
+});
+
+Schema::create('inventory_movements', function (Blueprint $table) {
+    $table->id();
+
+    $table->string('type', 20); // sale, restock, adjustment
+    $table->integer('quantity_change');
+
+    $table->string('reference_type')->nullable();
+    $table->unsignedBigInteger('reference_id')->nullable();
+
+    $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+    $table->foreignId('shift_id')->nullable()->constrained()->nullOnDelete();
+
+    $table->timestamp('created_at');
+
+    $table->index(['product_id', 'reference_type', 'reference_id', 'created_at']);
+});
+
+Schema::create('sales', function (Blueprint $table) {
+    $table->id();
+
+    $table->string('sale_number')->unique();
+    $table->unsignedTinyInteger('status')->default(1);
+    $table->decimal('total_amount', 12, 2);
+
+    $table->foreignId('shift_id')->constrained()->restrictOnDelete();
+    $table->foreignId('user_id')->constrained()->restrictOnDelete();
+    
+    $table->timestamp('completed_at');
+    $table->timestamps();
+
+    $table->index(['shift_id', 'completed_at']);
+});
+
+Schema::create('sale_items', function (Blueprint $table) {
+    $table->id();
+
+    $table->foreignId('sale_id')->constrained()->cascadeOnDelete();
+
+    $table->foreignId('product_id')->constrained()->restrictOnDelete();
+
+    $table->string('product_name');
+    $table->string('sku');
+
+    $table->decimal('unit_price', 12, 2);
+    $table->integer('quantity');
+    $table->decimal('line_total', 12, 2);
+
+    $table->timestamps();
+});
+
+Schema::create('sale_payments', function (Blueprint $table) {
+    $table->id();
+
+    $table->string('method'); // cash, card, mpesa
+    $table->decimal('amount', 12, 2);
+    
+    $table->string('reference')->nullable();
+
+    $table->foreignId('sale_id')->constrained()->cascadeOnDelete();
+
+    $table->timestamps();
+});
+
+Schema::create('cash_movements', function (Blueprint $table) {
+    $table->id();
+    
+    $table->string('type'); // opening, sale, payout, topup, closing
+    $table->decimal('amount', 12, 2);
+    
+    $table->string('note')->nullable();
+    
+    $table->foreignId('shift_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('user_id')->constrained()->restrictOnDelete();
+
+    $table->timestamps();
+});
 ```

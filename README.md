@@ -2,6 +2,6 @@
 
 # Stack
 Backend: Laravel
-Frontend: Livewire + Blade
+Frontend: Inertia + Livewire + Blade
 Database: MySQL
 
